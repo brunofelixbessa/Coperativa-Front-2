@@ -3,7 +3,7 @@
   <div class="pagina">
     <q-card class="login q-pa-md">
       <q-form class="q-gutter-y-sm">
-        <div class="text-center text-h6">Acesso restrito</div>
+        <div class="text-center text-h6">Acesso restrito v1.2</div>
         <q-input
           dense
           v-if="cadastrando"
