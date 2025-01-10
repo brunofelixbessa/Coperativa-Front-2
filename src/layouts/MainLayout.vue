@@ -101,7 +101,7 @@
             <q-item-section avatar>
               <q-icon color="secondary" name="info" />
             </q-item-section>
-            <q-item-section class="text-white"> v1.1 </q-item-section>
+            <q-item-section class="text-white"> v1.2 </q-item-section>
           </q-item>
         </q-list>
       </q-scroll-area>
