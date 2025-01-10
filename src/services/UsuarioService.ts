@@ -7,8 +7,6 @@ import {
   MsgAPI,
 } from 'src/util/useMsg';
 
-const BASE_URL = 'v1/Usuario/';
-
 export default function usuarioServices() {
   //#region Busca
   const validarTokenNaAPI = async (idToken: string) => {
@@ -18,16 +16,18 @@ export default function usuarioServices() {
         'Authorization'
       ] = `Bearer ${idToken}`;
       const { dados, erro, mensagem } = await apiSinaliza
-        .get(`${BASE_URL}validar-token/${idToken}`)
+        .get(`v1/Usuario/validar-token/${idToken}`)
         .then((res) => {
           if (res) return res.data;
         });
-      MsgAPI(dados, erro, mensagem);
+
+      //MsgAPI(dados, erro, mensagem);
       MsgOcupado(false);
       return erro ? false : dados;
     } catch (e) {
       MsgOcupado(false);
-      MsgErro('Erro ao ValidarTokenNaAPI');
+      MsgErro('Erro ao Validar Usuário');
+      return false;
     }
   };
 
@@ -35,7 +35,7 @@ export default function usuarioServices() {
     try {
       MsgOcupado(true);
       const { dados, erro, mensagem } = await apiSinaliza
-        .get(`${BASE_URL}buscar-por-cpf/${cpf}`)
+        .get(`v1/Usuario/buscar-por-cpf/${cpf}`)
         .then((res) => {
           if (res) return res.data;
         });
@@ -53,7 +53,7 @@ export default function usuarioServices() {
     try {
       MsgOcupado(true);
       const { dados, erro, mensagem } = await apiSinaliza
-        .get(`${BASE_URL}buscar-generica/${valor}`)
+        .get(`v1/Usuario/buscar-generica/${valor}`)
         .then((res) => {
           if (res) return res.data;
         });
@@ -71,7 +71,7 @@ export default function usuarioServices() {
     try {
       MsgOcupado(true);
       const { dados, erro, mensagem } = await apiSinaliza
-        .get(`${BASE_URL}buscar-generica-com-valor/${valor}`)
+        .get(`v1/Usuario/buscar-generica-com-valor/${valor}`)
         .then((res) => {
           if (res) return res.data;
         });
@@ -91,7 +91,7 @@ export default function usuarioServices() {
     try {
       MsgOcupado(true);
       const { dados, erro, mensagem } = await apiSinaliza
-        .post(`${BASE_URL}criar`, usuario)
+        .post('v1/Usuario/criar', usuario)
         .then((res) => {
           if (res) return res.data;
         });
@@ -109,15 +109,17 @@ export default function usuarioServices() {
     try {
       MsgOcupado(true);
       const { dados, erro, mensagem } = await apiSinaliza
-        .post(`${BASE_URL}cadastrar-usuario-basico`, usuario)
+        .post('v1/Usuario/cadastrar-usuario-basico', usuario)
         .then((res) => {
           if (res) return res.data;
         });
+      console.log(dados, erro, mensagem);
       MsgAPI(dados, erro, mensagem);
       MsgOcupado(false);
       return erro ? null : dados;
     } catch (e: any) {
       MsgOcupado(false);
+      console.log(e.response?.data?.mensagem);
       const errorMessage =
         e.response?.data?.mensagem || 'Erro ao cadastrar usuário';
       MsgErro(errorMessage);
@@ -131,7 +133,7 @@ export default function usuarioServices() {
     try {
       MsgOcupado(true);
       const { dados, erro, mensagem } = await apiSinaliza
-        .put(`${BASE_URL}atualizar`, usuario)
+        .put('v1/Usuario/atualizar', usuario)
         .then((res) => {
           if (res) return res.data;
         });
@@ -151,7 +153,7 @@ export default function usuarioServices() {
     try {
       MsgOcupado(true);
       const { dados, erro, mensagem } = await apiSinaliza
-        .post(`${BASE_URL}validar-login-senha`, { login, senha })
+        .post('v1/Usuario/validar-login-senha', { login, senha })
         .then((res) => {
           if (res) return res.data;
         });
@@ -171,7 +173,7 @@ export default function usuarioServices() {
     try {
       MsgOcupado(true);
       const { dados, erro, mensagem } = await apiSinaliza
-        .post(`${BASE_URL}enviar-email-recuperacao`, { email })
+        .post('v1/Usuario/enviar-email-recuperacao', { email })
         .then((res) => {
           if (res) return res.data;
         });
@@ -189,7 +191,7 @@ export default function usuarioServices() {
     try {
       MsgOcupado(true);
       const { dados, erro, mensagem } = await apiSinaliza
-        .post(`${BASE_URL}confirmar-pin`, { email, pin })
+        .post('v1/Usuario/confirmar-pin', { email, pin })
         .then((res) => {
           if (res) return res.data;
         });
@@ -207,7 +209,7 @@ export default function usuarioServices() {
     try {
       MsgOcupado(true);
       const { dados, erro, mensagem } = await apiSinaliza
-        .post(`${BASE_URL}alterar-senha`, { email, novaSenha })
+        .post('v1/Usuario/alterar-senha', { email, novaSenha })
         .then((res) => {
           if (res) return res.data;
         });

@@ -17,7 +17,6 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import usuarioService from 'src/services/UsuarioService';
 
 // const { buscarGenerica } = usuarioService();
 const modelMultiple = ref(['Facebook']);

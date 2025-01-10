@@ -23,10 +23,19 @@
           dense
           outlined
           v-model="form.email"
-          label="Email / Login"
+          label="Email"
+          type="email"
+        />
+
+        <!-- <q-input
+          dense
+          outlined
+          v-model="form.email"
+          label="Email"
           :error="emailErro"
           :error-message="loginErroMensagem"
-        />
+        /> -->
+
         <q-input
           dense
           v-if="cadastrando"
@@ -59,7 +68,7 @@
           class="full-width"
           color="secondary"
           label="Entrar"
-          @click="autenticar()"
+          @click="loginEmailSenha()"
         />
         <q-btn
           v-else
@@ -70,6 +79,7 @@
           @click="criarCadastro()"
         />
         <q-btn
+          v-if="!cadastrando"
           outline
           no-caps
           class="full-width"
@@ -97,6 +107,7 @@
           @click="cadastrando = !cadastrando"
         />
         <q-btn
+          v-if="!cadastrando"
           flat
           no-caps
           class="full-width"
@@ -135,7 +146,7 @@ const senhaErroMensagem = ref('');
 const paginaRequerente = router.currentRoute.value.query.to || '/';
 const cadastrando = ref(false);
 
-const { loginUsuario, cadastrarUsuarioBasico } = usuarioService();
+const { cadastrarUsuarioBasico } = usuarioService();
 
 /**
  * Redireciona o usuário autenticado para a página requisitada.
@@ -147,16 +158,36 @@ onMounted(() => {
 });
 
 /**
+ * Autentica o usuário com email e senha.
+ * @param {string} email - O email do usuário.
+ * @param {string} senha - A senha do usuário.
+ * @returns {boolean} - Retorna true se a autenticação for bem-sucedida, caso contrário, false.
+ */
+const loginEmailSenha = async () => {
+  try {
+    if (!form.value.email || !form.value.senha) return;
+
+    const autenticado = await storeAuth.loginGoogleEmailSenha(
+      form.value.email,
+      form.value.senha
+    );
+    if (autenticado) {
+      router.push({ name: 'home' });
+    }
+  } catch (error) {
+    console.error('Erro ao realizar login com email e senha', error);
+  }
+};
+
+/**
  * Realiza o login com o Google.
  * Obtém o token do Google e valida na API.
  */
 const loginGoogle = async () => {
   try {
-    const token = await storeAuth.loginGooglePopUp();
-    if (token) {
+    const autenticado = await storeAuth.loginGooglePopUp();
+    if (autenticado) {
       router.push({ name: 'home' });
-    } else {
-      console.error('Token inválido');
     }
   } catch (error) {
     console.error('Erro ao realizar login com o Google', error);
@@ -169,7 +200,7 @@ const loginGoogle = async () => {
  */
 const criarCadastro = async () => {
   await cadastrarUsuarioBasico(form.value);
-  router.push(paginaRequerente);
+  //router.push(paginaRequerente);
 };
 
 /**
@@ -180,69 +211,6 @@ const resetarErros = () => {
   emailErroMensagem.value = '';
   senhaErro.value = false;
   senhaErroMensagem.value = '';
-};
-
-/**
- * Valida o formulário.
- * @returns {boolean} - Retorna true se o formulário for válido, caso contrário, false.
- */
-const validarFormulario = () => {
-  let valido = true;
-
-  if (!form.value.email) {
-    emailErro.value = true;
-    emailErroMensagem.value = 'Email é obrigatório';
-    valido = false;
-  }
-  if (!form.value.senha) {
-    senhaErro.value = true;
-    senhaErroMensagem.value = 'Senha é obrigatória';
-    valido = false;
-  }
-
-  return valido;
-};
-
-/**
- * Autentica o usuário com email e senha.
- * @param {string} email - O email do usuário.
- * @param {string} senha - A senha do usuário.
- * @returns {boolean} - Retorna true se a autenticação for bem-sucedida, caso contrário, false.
- */
-const autenticarUsuario = async (email, senha) => {
-  try {
-    const userData = await loginUsuario(email, senha);
-    if (userData) {
-      storeAuth.usuario = { ...userData };
-      storeAuth.isAuthenticated = true;
-      return true;
-    }
-    return storeAuth.isAuthenticated;
-  } catch (error) {
-    emailErro.value = true;
-    emailErroMensagem.value = 'Erro ao autenticar usuário';
-    return false;
-  }
-};
-
-/**
- * Autentica o usuário com email e senha.
- * Redireciona para a página requisitada após a autenticação.
- */
-const autenticar = async () => {
-  resetarErros();
-
-  if (!validarFormulario()) {
-    return;
-  }
-
-  const autenticado = await autenticarUsuario(
-    form.value.email,
-    form.value.senha
-  );
-  if (autenticado) {
-    router.push({ name: 'home' });
-  }
 };
 
 /**

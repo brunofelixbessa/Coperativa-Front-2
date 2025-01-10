@@ -131,78 +131,83 @@ export const useAuth = defineStore('useAuthStore', {
       }
     },
 
-    verificaStatus() {
-      onAuthStateChanged(auth, (userLoged) => {
-        if (userLoged) {
-          this.isAuthenticated = true;
-          //this.hidrataUsuario(userLoged);
-          //this.buscaUsuario(user);
-          // const result = window.localStorage.getItem('usuario');
-          // if (result) {
-          //   this.usuario = JSON.parse(result); // Busca localstorage
-          // }
-        } else {
-          //console.log('verifica Status Usuario deslogado ');
-          this.removeUsuario();
-        }
-      });
-      //console.log(this.usuario);
+    // verificaStatus() {
+    //   onAuthStateChanged(auth, (userLoged) => {
+    //     if (userLoged) {
+    //       this.isAuthenticated = true;
+    //       console.log(this.usuario);
+    //     } else {
+    //       this.removeUsuario();
+    //     }
+    //   });
+    // },
+
+    async init() {
+      this.getUsuario();
+      if (this.isAuthenticated) {
+        // apiGrupovab.defaults.headers.common[
+        //   "Authorization"
+        // ] = `Bearer ${this.token}`;
+        //console.log("com token");
+      } else {
+        //console.log("sem token");
+        this.removeUsuario();
+      }
     },
 
-    hidrataUsuario(userHidratado: any, idToken: string) {
-      this.usuario.Uid = userHidratado.uid;
-      this.usuario.Email = userHidratado.email;
-      this.usuario.Nome = userHidratado.displayName || 'Nome';
+    getUsuario() {
+      const storedUser = localStorage.getItem('usuario');
+      if (storedUser) {
+        this.usuario = JSON.parse(storedUser);
+        this.isAuthenticated = true;
+      } else {
+        this.removeUsuario();
+      }
+    },
+
+    setUsuario(userHidratado: any) {
+      //console.log(userHidratado);
+      this.usuario.Uid = userHidratado.usuario.id;
+      this.usuario.Email = userHidratado.usuario.email;
+      this.usuario.Nome = userHidratado.usuario.nome || 'Nome';
 
       window.localStorage.setItem('usuario', JSON.stringify(this.usuario)); // TODO
       // Aqui coloca o token no header
-      //console.log(idToken);
       apiSinaliza.defaults.headers.common[
         'Authorization'
-      ] = `Bearer ${idToken}`;
-      //aqui vamos validar na api para buscar o novo token
-      const novoToken = validarTokenNaAPI(idToken);
-      return novoToken;
+      ] = `Bearer ${userHidratado.token}`;
     },
 
     removeUsuario() {
       //console.log('remover');
       signOut(auth)
         .then(() => {
-          //this.usuario = {()};
           this.isAuthenticated = false;
           window.localStorage.removeItem('usuario');
-          //console.log('Usuario deslogado...');
         })
         .catch((error) => {
-          //console.log(error.message);
+          console.log(error);
         });
     },
     // google
     async loginGooglePopUp() {
       MsgOcupado(true); // Loading
       try {
-        const userCredential = await signInWithPopup(auth, provider);
-        //// Aqui busca o token no firebase
+        await signInWithPopup(auth, provider);
+
         const idToken = await auth.currentUser?.getIdToken();
         if (idToken) {
           this.isAuthenticated = true;
-          const retorno = await this.hidrataUsuario(
-            userCredential.user,
-            idToken
-          );
-
-          if (retorno != null) {
-            const usuarioEncontrado = await buscarGenerica(retorno.email);
-            const usuarioFiltrado = usuarioEncontrado[0];
-            if (usuarioEncontrado) {
-              this.usuario = { ...usuarioFiltrado };
-              console.log(this.usuario, 'usuario encontrado');
-            }
+          const retorno = await this.validatokenGoogleNoBackEnd(idToken);
+          if (retorno) {
+            MsgSucesso('Logado com sucesso');
+            return true;
+          } else {
+            MsgErro('Erro ao logar');
+            return false;
           }
         }
-        MsgSucesso('Logado com sucesso');
-        return true;
+        return false;
       } catch (error) {
         console.log(error);
       } finally {
@@ -210,14 +215,48 @@ export const useAuth = defineStore('useAuthStore', {
       }
     },
 
-    // teste valida token
-    validatokenTeste() {
-      // //console.log(idToken);
-      // const idToken2 =
-      //   'eyJhbGciOiJSUzI1NiIsImtpZCI6ImNjNWU0MTg0M2M1ZDUyZTY4ZWY1M2UyYmVjOTgxNDNkYTE0NDkwNWUiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiQnJ1bm8gRmVsaXgiLCJwaWN0dXJlIjoiaHR0cHM6Ly9saDMuZ29vZ2xldXNlcmNvbnRlbnQuY29tL2EvQUNnOG9jSWJOanV6ZWpBN3pjYVJBbEo5S0hUS1N2MnJaaFFNek8weGFwcXJLWnVmdDY5ZVJlcWN4QT1zOTYtYyIsImlzcyI6Imh0dHBzOi8vc2VjdXJldG9rZW4uZ29vZ2xlLmNvbS9lbXByZWl0ZWlyby03YmI0ZCIsImF1ZCI6ImVtcHJlaXRlaXJvLTdiYjRkIiwiYXV0aF90aW1lIjoxNzI1NDA5MzYxLCJ1c2VyX2lkIjoiQVEwT3RoMnN0alVLcEZFaUMwcFVxUnpYZEpyMiIsInN1YiI6IkFRME90aDJzdGpVS3BGRWlDMHBVcVJ6WGRKcjIiLCJpYXQiOjE3MjU0MDkzNjEsImV4cCI6MTcyNTQxMjk2MSwiZW1haWwiOiJicnVub2ZlbGl4YmVzc2FAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZ29vZ2xlLmNvbSI6WyIxMTEyOTU2MzQ1OTIxODI4MTI1ODMiXSwiZW1haWwiOlsiYnJ1bm9mZWxpeGJlc3NhQGdtYWlsLmNvbSJdfSwic2lnbl9pbl9wcm92aWRlciI6Imdvb2dsZS5jb20ifX0.M8T7ZiPdgSqSTskp-i9BXUjxs9NCNz9YGJgfvtoGOdEIpiV9Sa0onj2Y21qnqbUXf662wggKRL8ryxO95l8Uh6PadOpmMJVe5Mww0G25dX49IcitophW27nU0Qjvk016qqYt15J1EewPpCzxLlmQBNHvuZNSVkY2ZgrVKT4Zl-hFpribXQiRbEXTy3gLbNsYSEeSkoh6HqVrFfu_n6o2VNKOwaCTRyORsh8qnWB5sGyraqzQyaCGbiqBBJ3mPZdvgKgQzSAeiSJtks4JKh7VUyEi0bVRVEiirogEOsF85FijuJyPxrxC0lXaOqoYdj3I-6yUylJgkxltDdI3QIe2zA';
-      // //aqui vamos validar na api para buscar o novo token
-      // const novoToken = ValidarTokenNaAPI(idToken2);
-      // console.log(novoToken);
+    async loginGoogleEmailSenha(email: string, senha: string) {
+      MsgOcupado(true); // Loading
+      try {
+        await signInWithEmailAndPassword(auth, email, senha);
+
+        const idToken = await auth.currentUser?.getIdToken();
+        if (idToken) {
+          this.isAuthenticated = true;
+          const retorno = await this.validatokenGoogleNoBackEnd(idToken);
+          if (retorno) {
+            MsgSucesso('Logado com sucesso');
+            return true;
+          } else {
+            MsgErro('Erro ao logar');
+            return false;
+          }
+        }
+        return false;
+      } catch (error) {
+        MsgErro('Usuário ou senha inválidos');
+        console.log(error);
+      } finally {
+        MsgOcupado(false);
+      }
+    },
+
+    // valida token
+    async validatokenGoogleNoBackEnd(idToken: string) {
+      // Aqui coloca o token no header
+      apiSinaliza.defaults.headers.common[
+        'Authorization'
+      ] = `Bearer ${idToken}`;
+      //aqui vamos validar na api para buscar o novo token
+      const retorno = await validarTokenNaAPI(idToken);
+
+      if (retorno) {
+        this.setUsuario(retorno);
+        return true;
+      } else {
+        this.removeUsuario();
+        return false;
+      }
     },
   },
 });

@@ -121,10 +121,10 @@
             </q-item-section>
             <q-item-section>
               <q-item-label>{{
-                storeAuth.usuario?.nome || 'Nome do usuário'
+                storeAuth.usuario?.Nome || 'Nome do usuário'
               }}</q-item-label>
               <q-item-label caption lines="1">{{
-                storeAuth.usuario?.email || 'email do usuário'
+                storeAuth.usuario?.Email || 'email do usuário'
               }}</q-item-label>
             </q-item-section>
           </q-item>
@@ -150,23 +150,6 @@ export default defineComponent({
     const leftDrawerOpen = ref(false);
     const storeAuth = useAuth();
     const router = useRouter();
-
-    // Check the authentication status when the component is mounted
-    onMounted(() => {
-      buscaStatus();
-    });
-
-    // Placeholder for any actions before the component is mounted
-    onBeforeMount(() => {
-      //console.log(storeAuth.isAuthenticated);
-    });
-
-    /**
-     * Verifica o status de autenticação do usuário.
-     */
-    const buscaStatus = async () => {
-      await storeAuth.verificaStatus();
-    };
 
     /**
      * Realiza o logout do usuário e redireciona para a página de login.
